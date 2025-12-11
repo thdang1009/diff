@@ -66,7 +66,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/diff-toolbox.git
+git clone https://github.com/thdang1009/diff-toolbox.git
 cd diff-toolbox
 
 # Install dependencies
@@ -258,9 +258,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact
 
-- **GitHub**: [yourusername/diff-toolbox](https://github.com/yourusername/diff-toolbox)
-- **Issues**: [Report a bug](https://github.com/yourusername/diff-toolbox/issues)
-- **Discussions**: [Join the conversation](https://github.com/yourusername/diff-toolbox/discussions)
+- **GitHub**: [thdang1009/diff-toolbox](https://github.com/thdang1009/diff-toolbox)
+- **Issues**: [Report a bug](https://github.com/thdang1009/diff-toolbox/issues)
+- **Discussions**: [Join the conversation](https://github.com/thdang1009/diff-toolbox/discussions)
 
 ---
 
