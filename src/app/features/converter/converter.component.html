@@ -1,25 +1,197 @@
-<div class="container">
+<div class="converter-container">
   <div class="feature-header">
-    <h2>JSON ↔ Excel Converter</h2>
+    <h2>📊 JSON ↔ Excel Converter</h2>
     <p class="feature-description">
-      Bi-directional conversion between JSON and Excel formats with support for multiple sheets and data types.
+      Convert between JSON and Excel formats instantly. All processing happens locally in your browser - your data never leaves your device.
     </p>
   </div>
 
-  <div class="feature-content">
-    <div class="placeholder-content">
-      <div class="placeholder-icon">📊</div>
-      <h3>JSON/Excel Converter</h3>
-      <p>This feature is under development.</p>
-      <ul class="feature-list">
-        <li>JSON to Excel conversion</li>
-        <li>Excel to JSON parsing</li>
-        <li>Support for XLSX, XLS, CSV formats</li>
-        <li>Multiple sheet support</li>
-        <li>Custom sheet naming</li>
-        <li>Data type preservation</li>
-        <li>Large file support (10MB+)</li>
-      </ul>
-    </div>
-  </div>
+  <mat-tab-group class="converter-tabs" animationDuration="300ms">
+    <!-- JSON to Excel Tab -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>download</mat-icon>
+        <span>JSON → Excel</span>
+      </ng-template>
+
+      <div class="tab-content">
+        <mat-card class="converter-card">
+          <mat-card-header>
+            <mat-card-title>Convert JSON to Excel</mat-card-title>
+            <mat-card-subtitle>Paste your JSON array and download as XLSX file</mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="form-section">
+              <div class="form-actions">
+                <button mat-raised-button color="accent" (click)="loadSampleJson()">
+                  <mat-icon>lightbulb</mat-icon>
+                  Load Sample Data
+                </button>
+                <button mat-button (click)="jsonInput.set('')">
+                  <mat-icon>clear</mat-icon>
+                  Clear
+                </button>
+              </div>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>JSON Data</mat-label>
+                <textarea
+                  matInput
+                  [(ngModel)]="jsonInput"
+                  placeholder='[{"id": 1, "name": "John"}, {"id": 2, "name": "Jane"}]'
+                  rows="15"
+                  class="json-textarea"
+                ></textarea>
+                <mat-hint>Enter an array of objects. Single objects will be wrapped in an array automatically.</mat-hint>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="sheet-name-field">
+                <mat-label>Sheet Name (Optional)</mat-label>
+                <input matInput [(ngModel)]="sheetName" placeholder="Sheet1" />
+                <mat-icon matSuffix>label</mat-icon>
+              </mat-form-field>
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions align="end">
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="convertJsonToExcel()"
+              [disabled]="!jsonInput() || isConvertingToExcel()"
+            >
+              @if (isConvertingToExcel()) {
+                <mat-spinner diameter="20" class="inline-spinner"></mat-spinner>
+                <span>Converting...</span>
+              } @else {
+                <mat-icon>file_download</mat-icon>
+                <span>Download Excel</span>
+              }
+            </button>
+          </mat-card-actions>
+        </mat-card>
+
+        <div class="info-panel">
+          <h4><mat-icon>info</mat-icon> How it works</h4>
+          <ol>
+            <li>Paste your JSON data (must be an array of objects)</li>
+            <li>Optionally customize the sheet name</li>
+            <li>Click "Download Excel" to generate and download the XLSX file</li>
+          </ol>
+          <p class="privacy-note">
+            <mat-icon>lock</mat-icon>
+            <strong>100% Private:</strong> All conversion happens in your browser. No data is sent to any server.
+          </p>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- Excel to JSON Tab -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <mat-icon>upload</mat-icon>
+        <span>Excel → JSON</span>
+      </ng-template>
+
+      <div class="tab-content">
+        <mat-card class="converter-card">
+          <mat-card-header>
+            <mat-card-title>Convert Excel to JSON</mat-card-title>
+            <mat-card-subtitle>Upload your Excel file and get JSON output</mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="upload-section">
+              <div class="file-input-wrapper">
+                <input
+                  type="file"
+                  #fileInput
+                  (change)="onFileSelected($event)"
+                  accept=".xlsx,.xls,.csv"
+                  id="excel-file-input"
+                  class="hidden-file-input"
+                />
+                <label for="excel-file-input" class="file-upload-label">
+                  <mat-icon>cloud_upload</mat-icon>
+                  <span class="upload-text">
+                    @if (fileName()) {
+                      <strong>{{ fileName() }}</strong>
+                    } @else {
+                      Click to select Excel file or drag & drop
+                    }
+                  </span>
+                  <span class="upload-hint">Supports .xlsx, .xls, .csv (max 10MB)</span>
+                </label>
+              </div>
+
+              @if (selectedFile()) {
+                <div class="file-info">
+                  <mat-icon>description</mat-icon>
+                  <span>{{ fileName() }}</span>
+                  <span class="file-size">({{ (selectedFile()!.size / 1024 / 1024).toFixed(2) }} MB)</span>
+                </div>
+              }
+            </div>
+
+            @if (jsonOutput()) {
+              <div class="output-section">
+                <div class="output-header">
+                  <h4>JSON Output</h4>
+                  <button mat-icon-button (click)="copyToClipboard()" matTooltip="Copy to clipboard">
+                    <mat-icon>content_copy</mat-icon>
+                  </button>
+                </div>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Converted JSON</mat-label>
+                  <textarea
+                    matInput
+                    [ngModel]="jsonOutput()"
+                    readonly
+                    rows="15"
+                    class="json-textarea output-textarea"
+                  ></textarea>
+                </mat-form-field>
+              </div>
+            }
+          </mat-card-content>
+
+          <mat-card-actions align="end">
+            <button mat-button (click)="clearAll()">
+              <mat-icon>clear_all</mat-icon>
+              Clear All
+            </button>
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="convertExcelToJson()"
+              [disabled]="!selectedFile() || isConvertingToJson()"
+            >
+              @if (isConvertingToJson()) {
+                <mat-spinner diameter="20" class="inline-spinner"></mat-spinner>
+                <span>Converting...</span>
+              } @else {
+                <mat-icon>transform</mat-icon>
+                <span>Convert to JSON</span>
+              }
+            </button>
+          </mat-card-actions>
+        </mat-card>
+
+        <div class="info-panel">
+          <h4><mat-icon>info</mat-icon> How it works</h4>
+          <ol>
+            <li>Upload your Excel file (.xlsx, .xls, or .csv)</li>
+            <li>Click "Convert to JSON" to process the file</li>
+            <li>Copy the JSON output or use it directly</li>
+          </ol>
+          <p class="privacy-note">
+            <mat-icon>lock</mat-icon>
+            <strong>100% Private:</strong> Your file is processed locally. No upload to any server.
+          </p>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
 </div>
