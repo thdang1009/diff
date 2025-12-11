@@ -1,0 +1,36 @@
+<div class="app-container">
+  <header class="app-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="logo">
+          <h1>Diff & Convert Toolbox</h1>
+          <p class="tagline">Free, Fast, and Secure Client-Side Tools</p>
+        </div>
+        <nav class="main-nav">
+          <a routerLink="/json-diff" routerLinkActive="active">JSON Diff</a>
+          <a routerLink="/text-diff" routerLinkActive="active">Text Diff</a>
+          <a routerLink="/converter" routerLinkActive="active">Converter</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <router-outlet />
+  </main>
+
+  <footer class="app-footer">
+    <div class="container">
+      <div class="footer-content">
+        <p>&copy; 2024 Diff & Convert Toolbox. All processing happens locally in your browser.</p>
+        <div class="footer-links">
+          <a href="https://github.com/yourusername/diff-toolbox" target="_blank" rel="noopener noreferrer">
+            GitHub
+          </a>
+          <span class="separator">|</span>
+          <span class="privacy-note">🔒 100% Privacy - No data leaves your device</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>

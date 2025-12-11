@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ng version:*)",
+      "Bash(npm install:*)",
+      "Bash(ng new:*)",
+      "Bash(find:*)",
+      "Bash(npx ng version)",
+      "Bash(npm start)",
+      "Bash(timeout 30 bash -c 'until curl -s http://localhost:4200 > /dev/null; do sleep 1; done && echo \"\"Server is ready!\"\"')",
+      "Bash(curl:*)"
+    ]
+  }
+}
