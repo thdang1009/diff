@@ -1,24 +1,224 @@
-<div class="container">
+<div class="json-diff-container">
   <div class="feature-header">
-    <h2>JSON Diff</h2>
+    <h2>🔍 JSON Diff</h2>
     <p class="feature-description">
-      Compare two JSON objects with structural analysis. Detect added, removed, and modified properties.
+      Compare JSON objects with structural analysis. Detect added, removed, and modified properties. All processing happens locally in your browser.
     </p>
   </div>
 
-  <div class="feature-content">
-    <div class="placeholder-content">
-      <div class="placeholder-icon">🔍</div>
-      <h3>JSON Diff Tool</h3>
-      <p>This feature is under development.</p>
-      <ul class="feature-list">
-        <li>Structural JSON comparison</li>
-        <li>Ignore key order option</li>
-        <li>Ignore whitespace option</li>
-        <li>Array comparison with order handling</li>
-        <li>Monaco editor with syntax highlighting</li>
-        <li>Export diff results</li>
-      </ul>
+  <!-- Input Section -->
+  <div class="input-section">
+    <div class="input-controls">
+      <button mat-raised-button color="accent" (click)="loadSample()">
+        <mat-icon>lightbulb</mat-icon>
+        Load Sample
+      </button>
+      <button mat-button (click)="swapJson()" matTooltip="Swap left and right">
+        <mat-icon>swap_horiz</mat-icon>
+        Swap
+      </button>
+      <button mat-button (click)="clearAll()">
+        <mat-icon>clear_all</mat-icon>
+        Clear All
+      </button>
     </div>
+
+    <div class="json-inputs">
+      <div class="json-input-wrapper">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Original JSON</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="originalJson"
+            placeholder='{"key": "value"}'
+            rows="15"
+            class="json-textarea"
+          ></textarea>
+          <mat-hint>Left side / Original version</mat-hint>
+        </mat-form-field>
+        <button mat-icon-button (click)="formatJson('original')" matTooltip="Format JSON" class="format-button">
+          <mat-icon>code</mat-icon>
+        </button>
+      </div>
+
+      <div class="json-input-wrapper">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Modified JSON</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="modifiedJson"
+            placeholder='{"key": "value"}'
+            rows="15"
+            class="json-textarea"
+          ></textarea>
+          <mat-hint>Right side / Modified version</mat-hint>
+        </mat-form-field>
+        <button mat-icon-button (click)="formatJson('modified')" matTooltip="Format JSON" class="format-button">
+          <mat-icon>code</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Options Section -->
+  <mat-card class="options-card">
+    <mat-card-content>
+      <div class="options-row">
+        <div class="options-toggles">
+          <mat-slide-toggle [(ngModel)]="ignoreKeyOrder" color="primary">
+            Ignore Key Order
+          </mat-slide-toggle>
+          <mat-slide-toggle [(ngModel)]="ignoreArrayOrder" color="primary">
+            Ignore Array Order
+          </mat-slide-toggle>
+          <mat-slide-toggle [(ngModel)]="showUnchanged" color="primary">
+            Show Unchanged
+          </mat-slide-toggle>
+        </div>
+
+        <div class="action-buttons">
+          <button mat-raised-button color="primary" (click)="computeDiff()">
+            <mat-icon>compare</mat-icon>
+            Compare
+          </button>
+          @if (hasResults()) {
+            <button mat-button (click)="copyDiff()" matTooltip="Copy diff to clipboard">
+              <mat-icon>content_copy</mat-icon>
+            </button>
+            <button mat-button (click)="downloadDiff()" matTooltip="Download diff as Markdown">
+              <mat-icon>download</mat-icon>
+            </button>
+          }
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Stats Section -->
+  @if (hasResults()) {
+    <div class="stats-section">
+      <mat-card class="stats-card">
+        <mat-card-content>
+          <div class="stats-grid">
+            <div class="stat-item stat-additions">
+              <mat-icon>add_circle</mat-icon>
+              <div class="stat-value">{{ stats().added }}</div>
+              <div class="stat-label">Added</div>
+            </div>
+            <div class="stat-item stat-deletions">
+              <mat-icon>remove_circle</mat-icon>
+              <div class="stat-value">{{ stats().deleted }}</div>
+              <div class="stat-label">Deleted</div>
+            </div>
+            <div class="stat-item stat-modified">
+              <mat-icon>edit</mat-icon>
+              <div class="stat-value">{{ stats().modified }}</div>
+              <div class="stat-label">Modified</div>
+            </div>
+            <div class="stat-item stat-unchanged">
+              <mat-icon>check_circle</mat-icon>
+              <div class="stat-value">{{ stats().unchanged }}</div>
+              <div class="stat-label">Unchanged</div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Diff Results Section -->
+  @if (hasResults()) {
+    <div class="diff-results">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>difference</mat-icon>
+            Diff Results
+          </mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content>
+          <div class="diff-tree">
+            @for (node of diffResults(); track $index) {
+              <div class="diff-node-container">
+                @if (node.children && node.children.length > 0) {
+                  <mat-expansion-panel [expanded]="true">
+                    <mat-expansion-panel-header>
+                      <mat-panel-title>
+                        <mat-icon class="node-icon" [ngClass]="getDiffClass(node.type)">
+                          {{ getDiffIcon(node.type) }}
+                        </mat-icon>
+                        <span class="node-path">{{ node.path }}</span>
+                        <span class="node-type-badge">{{ node.type }}</span>
+                      </mat-panel-title>
+                    </mat-expansion-panel-header>
+
+                    <div class="diff-children">
+                      @for (child of node.children; track $index) {
+                        <div class="diff-child-node" [ngClass]="getDiffClass(child.type)">
+                          <mat-icon class="child-icon">
+                            {{ getDiffIcon(child.type) }}
+                          </mat-icon>
+                          <span class="child-path">{{ child.path }}</span>
+
+                          @if (child.type === 'added') {
+                            <span class="child-value added-value">{{ formatValue(child.newValue) }}</span>
+                          } @else if (child.type === 'deleted') {
+                            <span class="child-value deleted-value">{{ formatValue(child.oldValue) }}</span>
+                          } @else if (child.type === 'modified' || child.type === 'type-changed') {
+                            <span class="child-value-change">
+                              <span class="old-value">{{ formatValue(child.oldValue) }}</span>
+                              <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+                              <span class="new-value">{{ formatValue(child.newValue) }}</span>
+                            </span>
+                          } @else if (child.type === 'equal') {
+                            <span class="child-value equal-value">{{ formatValue(child.oldValue) }}</span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </mat-expansion-panel>
+                } @else {
+                  <div class="diff-simple-node" [ngClass]="getDiffClass(node.type)">
+                    <mat-icon class="node-icon">
+                      {{ getDiffIcon(node.type) }}
+                    </mat-icon>
+                    <span class="node-path">{{ node.path }}</span>
+
+                    @if (node.type === 'added') {
+                      <span class="node-value added-value">{{ formatValue(node.newValue) }}</span>
+                    } @else if (node.type === 'deleted') {
+                      <span class="node-value deleted-value">{{ formatValue(node.oldValue) }}</span>
+                    } @else if (node.type === 'modified' || node.type === 'type-changed') {
+                      <span class="node-value-change">
+                        <span class="old-value">{{ formatValue(node.oldValue) }}</span>
+                        <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+                        <span class="new-value">{{ formatValue(node.newValue) }}</span>
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Info Panel -->
+  <div class="info-panel">
+    <h4><mat-icon>info</mat-icon> How it works</h4>
+    <ol>
+      <li>Enter or paste your original JSON in the left field</li>
+      <li>Enter or paste your modified JSON in the right field</li>
+      <li>Optionally configure comparison options (key order, array order, show unchanged)</li>
+      <li>Click "Compare" to see structural differences</li>
+      <li>Export results or copy to clipboard</li>
+    </ol>
+    <p class="privacy-note">
+      <mat-icon>lock</mat-icon>
+      <strong>100% Private:</strong> All comparison happens in your browser. No data is sent to any server.
+    </p>
   </div>
 </div>
