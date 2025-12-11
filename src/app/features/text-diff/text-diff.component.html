@@ -1,25 +1,235 @@
-<div class="container">
+<div class="text-diff-container">
   <div class="feature-header">
-    <h2>Text Diff</h2>
+    <h2>📝 Text Diff</h2>
     <p class="feature-description">
-      Line-by-line text comparison with word-level granularity for precise change detection.
+      Line-by-line text comparison with word-level granularity for precise change detection. All processing happens locally in your browser.
     </p>
   </div>
 
-  <div class="feature-content">
-    <div class="placeholder-content">
-      <div class="placeholder-icon">📝</div>
-      <h3>Text Diff Tool</h3>
-      <p>This feature is under development.</p>
-      <ul class="feature-list">
-        <li>Line-by-line comparison</li>
-        <li>Word-level granularity</li>
-        <li>Ignore whitespace option</li>
-        <li>Case-sensitive comparison toggle</li>
-        <li>Split and unified view modes</li>
-        <li>Syntax highlighting for code</li>
-        <li>Web Worker support for large files</li>
-      </ul>
+  <!-- Input Section -->
+  <div class="input-section">
+    <div class="input-controls">
+      <button mat-raised-button color="accent" (click)="loadSample()">
+        <mat-icon>lightbulb</mat-icon>
+        Load Sample
+      </button>
+      <button mat-button (click)="swapTexts()" matTooltip="Swap left and right">
+        <mat-icon>swap_horiz</mat-icon>
+        Swap
+      </button>
+      <button mat-button (click)="clearAll()">
+        <mat-icon>clear_all</mat-icon>
+        Clear All
+      </button>
     </div>
+
+    <div class="text-inputs">
+      <div class="text-input-wrapper">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Original Text</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="originalText"
+            placeholder="Enter original text..."
+            rows="15"
+            class="diff-textarea"
+          ></textarea>
+          <mat-hint>Left side / Original version</mat-hint>
+        </mat-form-field>
+      </div>
+
+      <div class="text-input-wrapper">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Modified Text</mat-label>
+          <textarea
+            matInput
+            [(ngModel)]="modifiedText"
+            placeholder="Enter modified text..."
+            rows="15"
+            class="diff-textarea"
+          ></textarea>
+          <mat-hint>Right side / Modified version</mat-hint>
+        </mat-form-field>
+      </div>
+    </div>
+  </div>
+
+  <!-- Options Section -->
+  <mat-card class="options-card">
+    <mat-card-content>
+      <div class="options-row">
+        <div class="options-toggles">
+          <mat-slide-toggle [(ngModel)]="ignoreWhitespace" color="primary">
+            Ignore Whitespace
+          </mat-slide-toggle>
+          <mat-slide-toggle [(ngModel)]="ignoreCase" color="primary">
+            Ignore Case
+          </mat-slide-toggle>
+        </div>
+
+        <div class="view-mode-toggle">
+          <mat-button-toggle-group [(ngModel)]="viewMode" name="viewMode">
+            <mat-button-toggle value="unified">
+              <mat-icon>view_headline</mat-icon>
+              Unified
+            </mat-button-toggle>
+            <mat-button-toggle value="split">
+              <mat-icon>view_column</mat-icon>
+              Split
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+
+        <div class="action-buttons">
+          <button mat-raised-button color="primary" (click)="computeDiff()">
+            <mat-icon>compare</mat-icon>
+            Compare
+          </button>
+          @if (hasResults()) {
+            <button mat-button (click)="copyDiff()" matTooltip="Copy diff to clipboard">
+              <mat-icon>content_copy</mat-icon>
+            </button>
+            <button mat-button (click)="downloadDiff()" matTooltip="Download diff as Markdown">
+              <mat-icon>download</mat-icon>
+            </button>
+          }
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Stats Section -->
+  @if (hasResults()) {
+    <div class="stats-section">
+      <mat-card class="stats-card">
+        <mat-card-content>
+          <div class="stats-grid">
+            <div class="stat-item stat-additions">
+              <mat-icon>add_circle</mat-icon>
+              <div class="stat-value">{{ stats().additions }}</div>
+              <div class="stat-label">Additions</div>
+            </div>
+            <div class="stat-item stat-deletions">
+              <mat-icon>remove_circle</mat-icon>
+              <div class="stat-value">{{ stats().deletions }}</div>
+              <div class="stat-label">Deletions</div>
+            </div>
+            <div class="stat-item stat-unchanged">
+              <mat-icon>check_circle</mat-icon>
+              <div class="stat-value">{{ stats().unchanged }}</div>
+              <div class="stat-label">Unchanged</div>
+            </div>
+            <div class="stat-item stat-changes">
+              <mat-icon>trending_up</mat-icon>
+              <div class="stat-value">{{ stats().totalChanges }}</div>
+              <div class="stat-label">Total Changes</div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Diff Results Section -->
+  @if (hasResults()) {
+    <div class="diff-results">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>difference</mat-icon>
+            Diff Results
+          </mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content>
+          <!-- Unified View -->
+          @if (viewMode() === 'unified') {
+            <div class="unified-diff">
+              @for (lineDiff of lineDiffs(); track $index) {
+                <div class="diff-line" [ngClass]="getDiffClass(lineDiff.type)">
+                  <span class="line-number">{{ lineDiff.lineNumber }}</span>
+                  <span class="line-content">
+                    @if (lineDiff.wordDiffs && lineDiff.wordDiffs.length > 0) {
+                      @for (wordDiff of lineDiff.wordDiffs; track $index) {
+                        <span [ngClass]="getDiffClass(wordDiff.type)">{{ wordDiff.text }}</span>
+                      }
+                    } @else {
+                      <span>{{ lineDiff.oldText || lineDiff.newText }}</span>
+                    }
+                  </span>
+                  <span class="line-indicator">
+                    @if (lineDiff.type === 'insert') {
+                      <mat-icon>add</mat-icon>
+                    } @else if (lineDiff.type === 'delete') {
+                      <mat-icon>remove</mat-icon>
+                    } @else if (lineDiff.type === 'modified') {
+                      <mat-icon>edit</mat-icon>
+                    }
+                  </span>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Split View -->
+          @if (viewMode() === 'split') {
+            <div class="split-diff">
+              <div class="split-diff-header">
+                <div class="split-column">Original</div>
+                <div class="split-column">Modified</div>
+              </div>
+              @for (diff of sideBySideDiffs(); track $index) {
+                <div class="split-diff-row">
+                  <div class="split-column" [ngClass]="diff.left ? getDiffClass(diff.left.type) : 'diff-empty'">
+                    @if (diff.left) {
+                      <span class="line-number">{{ diff.lineNumber }}</span>
+                      <span class="line-content">
+                        @if (diff.wordDiffs?.left) {
+                          @for (wordDiff of diff.wordDiffs.left; track $index) {
+                            <span [ngClass]="getDiffClass(wordDiff.type)">{{ wordDiff.text }}</span>
+                          }
+                        } @else {
+                          {{ diff.left.text }}
+                        }
+                      </span>
+                    }
+                  </div>
+                  <div class="split-column" [ngClass]="diff.right ? getDiffClass(diff.right.type) : 'diff-empty'">
+                    @if (diff.right) {
+                      <span class="line-number">{{ diff.lineNumber }}</span>
+                      <span class="line-content">
+                        @if (diff.wordDiffs?.right) {
+                          @for (wordDiff of diff.wordDiffs.right; track $index) {
+                            <span [ngClass]="getDiffClass(wordDiff.type)">{{ wordDiff.text }}</span>
+                          }
+                        } @else {
+                          {{ diff.right.text }}
+                        }
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  }
+
+  <!-- Info Panel -->
+  <div class="info-panel">
+    <h4><mat-icon>info</mat-icon> How it works</h4>
+    <ol>
+      <li>Enter or paste your original text in the left field</li>
+      <li>Enter or paste your modified text in the right field</li>
+      <li>Optionally toggle "Ignore Whitespace" or "Ignore Case"</li>
+      <li>Click "Compare" to see line-by-line and word-level differences</li>
+      <li>Switch between Unified and Split views for different perspectives</li>
+    </ol>
+    <p class="privacy-note">
+      <mat-icon>lock</mat-icon>
+      <strong>100% Private:</strong> All comparison happens in your browser. No data is sent to any server.
+    </p>
   </div>
 </div>
