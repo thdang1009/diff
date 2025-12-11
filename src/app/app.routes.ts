@@ -3,7 +3,7 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'json-diff',
+    redirectTo: 'text-diff',
     pathMatch: 'full'
   },
   {
@@ -26,6 +26,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'json-diff'
+    redirectTo: 'text-diff'
   }
 ];
